@@ -1,0 +1,403 @@
+{
+  "name": "Gmail – AI Email Classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "includeSpamTrash": false,
+          "readStatus": "unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "trigger-gmail",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ha3MFHLQisthmTWL",
+          "name": "Gmail account 1"
+        }
+      },
+      "notes": "Polls for new unread emails from Gmail."
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(item => {\n  const json = item.json;\n  let text = json.text || json.textPlain || json.snippet || '';\n  \n  // Handle HTML if plain text is missing\n  if (!text && json.html) {\n    text = json.html.replace(/<[^>]*>?/gm, '');\n  }\n  \n  // Handle Webhook input override\n  if (json.text_body) text = json.text_body;\n\n  return {\n    json: {\n      subject: json.subject,\n      from: json.from,\n      text_body: text\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "convert-to-text",
+      "name": "Extract & Clean Content",
+      "notes": "Standardizes input from Gmail or Webhook into plain text."
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-5-mini",
+        "prompt": "=You are an intelligent email assistant. Your job is to classify incoming emails to help the user manage their inbox efficiently.\n**Categories:**\n1. \"Negocios / Importante\": Direct communication from clients, bosses, bills, official documents, or urgent specific requests.\n2. \"Personal\": Emails from friends, family, or personal acquaintances.\n3. \"Spam / Publicidad\": Newsletters, promotional offers, cold outreach, automated notifications, or obvious junk.\n**Input Data:**\n- Subject: {{ $json.subject }}\n- Sender: {{ $json.from }}\n- Content: {{ $json.text_body }}\n**Instructions:**\n- Analyze the sender and content tone.\n- Assign a 'priority' from 1 (Low) to 5 (High).\n  - 5 = Immediate action required (e.g., \"Urgent invoice\", \"Server down\").\n  - 1 = No action required (e.g., generic newsletter).\n- Provide a brief 'reason' (max 10 words).\n**Output Format:**\nReturn ONLY raw JSON with no markdown formatting:\n{\n  \"category\": \"Negocios / Importante\" | \"Personal\" | \"Spam / Publicidad\",\n  \"reason\": \"Brief explanation\",\n  \"priority\": 1-5\n}\n\nINPUT MAIL TEXT:\n{{ $json.text_body }}",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "ai-classifier",
+      "name": "AI Classifier",
+      "credentials": {
+        "openAiApi": {
+          "id": "JSv3PXQnwQwUSXku",
+          "name": "OpenAi account"
+        }
+      },
+      "notes": "Sends email content to OpenAI (GPT-4o) for classification."
+    },
+    {
+      "parameters": {
+        "jsCode": "const content = $input.first().json.text;\nconst cleanJson = content.replace(/```json\\n?|```/g, '').trim();\nreturn JSON.parse(cleanJson);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "parse-json",
+      "name": "Parse AI Response",
+      "notes": "Parses the JSON string returned by the AI, handling markdown blocks."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.category}}",
+                    "rightValue": "Negocios / Importante",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f0dc351c-24c5-4d08-9083-0eb4876075ac"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "business"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.category}}",
+                    "rightValue": "Spam / Publicidad",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6a96a903-5822-4fb9-9257-0636c541c0ce"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "spam"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.category}}",
+                    "rightValue": "Personal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "83d0cbdf-53b8-4f53-91ba-521e934d1856"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "personal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        800,
+        -16
+      ],
+      "id": "router",
+      "name": "Route by Category",
+      "notes": "Routes the execution based on the classified category."
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        176
+      ],
+      "id": "action-personal",
+      "name": "No Action (Personal)",
+      "notes": "No action taken for personal emails."
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "SPAM"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "action-mark-read",
+      "name": "Add label",
+      "webhookId": "18c6549d-f3ff-4c05-a184-0d3f52450657",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ha3MFHLQisthmTWL",
+          "name": "Gmail account 1"
+        }
+      },
+      "notes": "Marks important emails as read."
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_1",
+          "IMPORTANT"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1296,
+        -176
+      ],
+      "id": "8f5da7f1-db66-4da3-9ff2-df3544db6853",
+      "name": "Add label1",
+      "webhookId": "18c6549d-f3ff-4c05-a184-0d3f52450657",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ha3MFHLQisthmTWL",
+          "name": "Gmail account 1"
+        }
+      },
+      "notes": "Marks important emails as read."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "trigger-gmail": {
+      "main": [
+        [
+          {
+            "node": "convert-to-text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "trigger-webhook": {
+      "main": [
+        [
+          {
+            "node": "ai-classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convert-to-text": {
+      "main": [
+        [
+          {
+            "node": "ai-classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ai-classifier": {
+      "main": [
+        [
+          {
+            "node": "parse-json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse-json": {
+      "main": [
+        [
+          {
+            "node": "router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "router": {
+      "main": [
+        [
+          {
+            "node": "action-mark-read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "action-mark-spam",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "action-personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract & Clean Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract & Clean Content": {
+      "main": [
+        [
+          {
+            "node": "AI Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Route by Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Category": {
+      "main": [
+        [
+          {
+            "node": "Add label1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Action (Personal)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "137ead09-41cd-484b-9664-04e6112c7051",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c5cf52a45145aff42a55c6d9f67822dfc00a3667ee2cca3a8c0b299c0baca07"
+  },
+  "id": "tvDgPd57xV3PXCpO",
+  "tags": []
+}

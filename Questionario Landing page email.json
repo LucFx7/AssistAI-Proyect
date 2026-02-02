@@ -1,0 +1,452 @@
+{
+  "name": "Questionario Landing page email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5365c3b0-a1c5-4276-aa15-e06b8bfb696f",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e66fea6b-bc6e-4961-99f3-55f87bb67034",
+      "name": "Webhook",
+      "webhookId": "5365c3b0-a1c5-4276-aa15-e06b8bfb696f"
+    },
+    {
+      "parameters": {
+        "jsCode": "// El webhook llega como array con 1 item\nconst item = $input.first();\n\n// Acceso directo al body\nconst body = item.json.body || {};\n\n// Desestructuración segura\nconst {\n  contact = {},\n  questionnaire = {},\n  metadata = {}\n} = body;\n\n// Normalizamos los datos para que sean fáciles de usar\nreturn [\n  {\n    json: {\n      // ---- CONTACT ----\n      contact_name: contact.name || \"\",\n      contact_email: contact.email || \"\",\n      contact_company: contact.company || \"\",\n      contact_role: contact.role || \"\",\n\n      // ---- QUESTIONNAIRE ----\n      companySize: questionnaire.companySize || \"\",\n      industry: questionnaire.industry || \"\",\n      painPoints: questionnaire.painPoints || [],\n      aiMaturity: questionnaire.aiMaturity || \"\",\n      desiredSolutions: questionnaire.desiredSolutions || [],\n      budget: questionnaire.budget || \"\",\n      urgency: questionnaire.urgency || \"\",\n      additionalNotes: questionnaire.additionalNotes || \"\",\n\n      // ---- METADATA ----\n      submittedAt: metadata.submittedAt || \"\",\n      source: metadata.source || \"\",\n\n      // ---- RAW (opcional) ----\n      raw_body: body\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b372f75f-59f8-40c0-b0e7-5d761626a5a4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        -240
+      ],
+      "id": "219a5e37-b522-4bd9-9db2-a4bd4d95a3ae",
+      "name": "Append row in sheet",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "SrcHNU1aZeF7ktOB",
+          "mode": "list",
+          "cachedResultName": "blueprint",
+          "cachedResultUrl": "/projects/JFO5lOUecwHziOVo/datatables/SrcHNU1aZeF7ktOB"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "contact_name": "={{ $json.contact_name }}",
+            "contact_role": "={{ $json.contact_role }}",
+            "contact_email": "={{ $json.contact_email }}",
+            "contact_company": "={{ $json.contact_company }}",
+            "companySize": "={{ $json.companySize }}",
+            "industry": "={{ $json.industry }}",
+            "painPoints": "={{ $json.painPoints.join(', ') }}",
+            "aiMaturity": "={{ $json.aiMaturity }}",
+            "desiredSolutions": "={{ $json.desiredSolutions.join(', ') }}",
+            "budget": "={{ $json.budget }}",
+            "urgency": "={{ $json.urgency }}",
+            "additionalNotes": "={{ $json.additionalNotes }}",
+            "submittedAt": "={{ $json.submittedAt }}",
+            "source": "={{ $json.source }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "contact_name",
+              "displayName": "contact_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_email",
+              "displayName": "contact_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_company",
+              "displayName": "contact_company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_role",
+              "displayName": "contact_role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "companySize",
+              "displayName": "companySize",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "painPoints",
+              "displayName": "painPoints",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "aiMaturity",
+              "displayName": "aiMaturity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "desiredSolutions",
+              "displayName": "desiredSolutions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "additionalNotes",
+              "displayName": "additionalNotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "submittedAt",
+              "displayName": "submittedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "raw_body",
+              "displayName": "raw_body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "optimizeBulk": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "bde183d0-5cc8-48fd-9fcb-afe7f499bddd",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Entrada:\n\n{{ $json.raw_body.toJsonString() }}",
+        "options": {
+          "systemMessage": "Eres un redactor de email experto en ventas B2B para una agencia de IA. Recibes datos en formato JSON que han sido rellenados por un lead desde un cuestionario en una landing page.\n\nTu objetivo es generar un email de seguimiento altamente personalizado y persuasivo con el fin de convertir al lead en cliente.\n\nImportante:\n- Detecta el idioma principal en que el lead rellenó el formulario (mira especialmente additionalNotes, painきっPoints, desiredSolutions y otros campos de texto libre).\n- Genera el email COMPLETAMENTE en ese mismo idioma (incluyendo asunto, saludo, cuerpo y firma). Si el lead escribió en inglés, el email debe ser en inglés. Si escribió en español, en español.\n\nFormato de salida obligatorio:\n- Solo el código HTML completo del email (con <html>, <head> con estilos, <body>, etc.), listo para enviar.\n- Incluye estilos inline o en <style> para que se vea profesional y bonito (fuente Arial/sans-serif, botón CTA destacado, responsive).\n- Asunto en una línea con <subject>Tu asunto aquí</subject> al principio (para poder extraerlo fácilmente si se necesita).\n- Nunca incluyas ```html, explicaciones, texto fuera del HTML ni ningún otro contenido.\n\nEjemplo de estructura mínima (adáptala al lead):\n<!DOCTYPE html>\n<html>\n<head> ... estilos ... </head>\n<body>\n  <h1>Hola [Nombre]</h1>\n  <p>Contenido personalizado...</p>\n  <a href=\"...\" style=\"...\">Reservar reunión</a>\n  <p>Saludos,<br>Tu nombre</p>\n</body>\n</html>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        192
+      ],
+      "id": "6efcb56a-41d0-44f1-8a71-3cd342f3b02e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        352
+      ],
+      "id": "1ac082e7-c69a-4db6-984b-1d0facbd2500",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "JSv3PXQnwQwUSXku",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Code in JavaScript').item.json.raw_body.contact.email }}",
+        "subject": "AssistAi - Automatizise your future!",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        192
+      ],
+      "id": "3f691c00-423e-43f3-ae4f-b4157bd1667f",
+      "name": "Send a message",
+      "webhookId": "f335354b-f174-44c9-b2e2-141050332c14",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ha3MFHLQisthmTWL",
+          "name": "Gmail account 1"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "localhost:5678",
+            "connection": "keep-alive",
+            "content-length": "566",
+            "sec-ch-ua-platform": "\"Linux\"",
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+            "content-type": "application/json",
+            "sec-ch-ua-mobile": "?0",
+            "accept": "*/*",
+            "origin": "http://localhost:3000",
+            "sec-fetch-site": "same-site",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "referer": "http://localhost:3000/",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "contact": {
+              "name": "Test User",
+              "email": "gtecchio20969@iesjoanramis.org",
+              "company": "Empresa Test",
+              "role": "CEO"
+            },
+            "questionnaire": {
+              "companySize": "1-10",
+              "industry": "Technology",
+              "painPoints": [
+                "Falta de información en tiempo real"
+              ],
+              "aiMaturity": "Sin automatización aún",
+              "desiredSolutions": [
+                "Chatbots de IA / Soporte al cliente",
+                "Agentes de IA personalizados",
+                "Procesamiento y análisis de datos"
+              ],
+              "budget": "No estoy seguro",
+              "urgency": "Durante el próximo mes",
+              "additionalNotes": ""
+            },
+            "metadata": {
+              "submittedAt": "2026-01-27T12:26:28.334Z",
+              "source": "assistai-landing-page"
+            }
+          },
+          "webhookUrl": "http://localhost:5678/webhook/5365c3b0-a1c5-4276-aa15-e06b8bfb696f",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "0a6f1cf5-43f1-4cdd-8ea3-18e022cc1e71",
+  "meta": {
+    "instanceId": "6c5cf52a45145aff42a55c6d9f67822dfc00a3667ee2cca3a8c0b299c0baca07"
+  },
+  "id": "DKCfBn_TTbHon6WroS0mx",
+  "tags": []
+}
